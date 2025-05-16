@@ -129,7 +129,7 @@ dependencies {
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.core)
     implementation(libs.androidx.fragment)
-    implementation(libs.androidx.navigation.fragment)
+implementation("com.github.JessYanCoding:AndroidAutoSize:v1.2.1")   implementation(libs.androidx.navigation.fragment)
     implementation(libs.androidx.navigation.ui)
     implementation(libs.androidx.preference)
     implementation(libs.androidx.recyclerview)
