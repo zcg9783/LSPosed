@@ -116,13 +116,12 @@ materialThemeBuilder {
             }
         }
     }
-    // Add Material Design 3 color tokens (such as palettePrimary100) in generated theme
-    // rikka.material:material >= 2.0.0 provides such attributes
-    // Enable this if your are using rikka.material:material
     generatePalette = true
 }
 
 dependencies {
+    implementation("com.github.JessYanCoding:AndroidAutoSize:v1.2.1")
+
     annotationProcessor(libs.glide.compiler)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.browser)
