@@ -1,4 +1,4 @@
-name: Core
+name: 183
 
 on:
   workflow_dispatch:
@@ -78,17 +78,12 @@ jobs:
         shell: bash
         run: rm -rf $ANDROID_HOME/cmake
 
-      - name: Build dependencies
-        working-directory: libxposed
+      - name: Configure Gradle properties
         run: |
-          echo 'org.gradle.caching=true' >> ~/.gradle/gradle.properties
-          echo 'org.gradle.parallel=true' >> ~/.gradle/gradle.properties
-          echo 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8 -XX:+UseParallelGC' >> ~/.gradle/gradle.properties
-          echo 'android.native.buildOutput=verbose' >> ~/.gradle/gradle.properties
-          cd api
-          ./gradlew publishToMavenLocal
-          cd ../service
-          ./gradlew publishToMavenLocal
+          echo 'org.gradle.caching=true' >> $HOME/.gradle/gradle.properties
+          echo 'org.gradle.parallel=true' >> $HOME/.gradle/gradle.properties
+          echo 'org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8 -XX:+UseParallelGC' >> $HOME/.gradle/gradle.properties
+          echo 'android.native.buildOutput=verbose' >> $HOME/.gradle/gradle.properties
 
       - name: Build with Gradle
         run: |
