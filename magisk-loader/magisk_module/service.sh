@@ -23,3 +23,7 @@ cd "$MODDIR"
 
 # To avoid breaking Play Integrity in certain cases, we start LSPosed service daemon in late_start service mode instead of post-fs-data mode
 unshare --propagation slave -m sh -c "$MODDIR/daemon $@&"
+SDK_VERSION=$(getprop ro.build.version.sdk)
+if [ "$SDK_VERSION" -le 28 ]; then
+    resetprop --delete dalvik.vm.dex2oat-flags
+fi
