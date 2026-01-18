@@ -69,7 +69,6 @@ public class HomeFragment extends BaseFragment implements MenuProvider {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        WelcomeDialog.showIfNeed(getChildFragmentManager());
     }
 
     @Override
