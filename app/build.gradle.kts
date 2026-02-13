@@ -153,7 +153,7 @@ dependencies {
     implementation(libs.hiddenapibypass)
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.core)
-    implementation(projects.services.managerService)
+    implementation(project(":services:manager-service"))
 }
 
 configurations.all {

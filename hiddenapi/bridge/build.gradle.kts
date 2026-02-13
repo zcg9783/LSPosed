@@ -22,5 +22,5 @@ plugins {
 }
 
 dependencies {
-    compileOnly(projects.hiddenapi.stubs)
+    compileOnly(project(":hiddenapi:stubs"))
 }

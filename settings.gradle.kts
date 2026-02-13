@@ -1,5 +1,3 @@
-enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
-
 pluginManagement {
     repositories {
         gradlePluginPortal()
@@ -27,7 +25,7 @@ include(
     ":hiddenapi:stubs",
     ":hiddenapi:bridge",
     ":magisk-loader",
-    ":services:manager-service",
     ":services:daemon-service",
+    ":services:manager-service",
     ":xposed",
 )

@@ -100,12 +100,12 @@ abstract class Injected @Inject constructor(val magiskDir: String) {
 }
 
 dependencies {
-    implementation(projects.core)
-    implementation(projects.hiddenapi.bridge)
-    implementation(projects.services.managerService)
-    implementation(projects.services.daemonService)
+    implementation(project(":core"))
+    implementation(project(":hiddenapi:bridge"))
+    implementation(project(":services:manager-service"))
+    implementation(project(":services:daemon-service"))
     compileOnly(libs.androidx.annotation)
-    compileOnly(projects.hiddenapi.stubs)
+    compileOnly(project(":hiddenapi:stubs"))
 }
 
 val zipAll = tasks.register("zipAll") {
