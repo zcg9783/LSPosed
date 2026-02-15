@@ -10,7 +10,6 @@ import java.lang.reflect.Method
  */
 object ParcelUtils {
 
-    @get:SuppressLint("SoonBlockedPrivateApi")
     private val obtainMethod: Method by lazy {
         Parcel::class.java.getDeclaredMethod("obtain", Long::class.java).apply {
             isAccessible = true

@@ -4,7 +4,6 @@
 
 #include <map>
 #include <string>
-#include <string_view>
 #include <tuple>
 
 // This module is a client of the 'native' library.
@@ -17,8 +16,7 @@ namespace vector::native::module {
  * @class IPCBridge
  * @brief Manages Binder IPC communication with the Vector host service.
  *
- * This singleton class is the communication arm of the Zygisk module. Its key
- * responsibilities are:
+ * This singleton class is the communication arm of the Zygisk module. Its key responsibilities are:
  * 1. Discovering and connecting to the central host service (the "manager").
  * 2. Requesting the framework's DEX file and obfuscation map from the service.
  * 3. Caching all necessary JNI class and method IDs for efficient reuse.
@@ -58,10 +56,8 @@ public:
     /**
      * @brief Asks the system_server binder for the application manager binder.
      * @param env JNI environment pointer.
-     * @param system_server_binder The binder connected to the system server
-     * service.
-     * @return A ScopedLocalRef to the application manager Binder, or nullptr on
-     * failure.
+     * @param system_server_binder The binder connected to the system server service.
+     * @return A ScopedLocalRef to the application manager Binder, or nullptr on failure.
      */
     lsplant::ScopedLocalRef<jobject> RequestManagerBinderFromSystemServer(
         JNIEnv *env, jobject system_server_binder);
@@ -86,10 +82,10 @@ public:
     /**
      * @brief Sets up the JNI hook to intercept Binder transactions.
      *
-     * This is the core of the IPC interception mechanism. It replaces the JNI
-     * function pointer for CallBooleanMethodV to inspect calls to
-     * Binder.execTransact, allowing the framework to handle its own custom
-     * transaction codes directly.
+     * This is the core of the IPC interception mechanism.
+     * It replaces the JNI function pointer for CallBooleanMethodV to
+     * inspect calls to Binder.execTransact, allowing the framework to
+     * handle its own custom transaction codes directly.
      * @param env JNI environment pointer.
      */
     void HookBridge(JNIEnv *env);
@@ -99,9 +95,8 @@ private:
      * @class ParcelWrapper
      * @brief A private RAII wrapper to ensure Parcel objects are always recycled.
      *
-     * As a private nested class, it has access to the private members of
-     * IPCBridge (like parcel_class_ and recycle_method_) without needing a
-     * 'friend' declaration. This is a clean, encapsulated implementation detail.
+     * As a private nested class, it has access to the private members of IPCBridge
+     * (like parcel_class_ and recycle_method_).
      */
     class ParcelWrapper {
     public:

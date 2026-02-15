@@ -21,7 +21,7 @@ object BridgeService {
     private const val TRANSACTION_CODE =
         ('_'.code shl 24) or ('L'.code shl 16) or ('S'.code shl 8) or 'P'.code
     private const val DESCRIPTOR = "LSPosed"
-    private const val TAG = "LSPosed-Bridge"
+    private const val TAG = "Vector-Bridge"
 
     /** Actions supported by the manual IPC bridge. */
     private enum class Action {

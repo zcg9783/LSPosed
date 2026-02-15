@@ -31,11 +31,11 @@ constexpr int LAST_APP_ZYGOTE_ISOLATED_UID = 98999;
 // UID for the process responsible for creating shared RELRO files.
 constexpr int SHARED_RELRO_UID = 1037;
 
-// Android uses this to separate users. UID = AppID + UserID * PER_USER_RANGE.
+// Android uses this to separate users. UID = AppID + UserID * 10000.
 constexpr int PER_USER_RANGE = 100000;
 
-constexpr uid_t MANAGER_UID = INJECTED_UID;
-constexpr uid_t GID_INET = 3003;  // Android's Internet group ID.
+constexpr uid_t MANAGER_UID = 2000;  // com.android.shell
+constexpr uid_t GID_INET = 3003;     // Android's Internet group ID.
 
 // A simply ConfigBridge implemnetation holding obfuscation maps in memory
 using obfuscation_map_t = std::map<std::string, std::string>;
@@ -51,7 +51,7 @@ private:
     ConfigImpl() = default;
 
     friend std::unique_ptr<ConfigImpl> std::make_unique<ConfigImpl>();
-    inline static std::map<std::string, std::string> obfuscation_map_;
+    obfuscation_map_t obfuscation_map_;
 };
 
 /**
@@ -59,9 +59,9 @@ private:
  * @brief The core implementation of the Zygisk module for the Vector framework.
  *
  * This class is the main entry point for Zygisk. It inherits from:
- * - zygisk::ModuleBase: To receive lifecycle callbacks from the Zygisk loader.
- * - vector::native::Context: To gain the core injection capabilities (DEX
- * loading, ART hooking) from the 'native' library.
+ * - zygisk::ModuleBase:      To receive lifecycle callbacks from the Zygisk loader.
+ * - vector::native::Context: To gain the core injection capabilities (DEX loading, ART hooking)
+ *                            from the 'native' library.
  *
  * It orchestrates the injection process by deciding which processes to target,
  * using the IPCBridge to fetch the framework from the manager service, and then
@@ -80,8 +80,8 @@ protected:
      * @brief Provides the concrete implementation for loading the framework DEX.
      *
      * This method is a pure virtual in the native::core::Context base class and
-     * must be implemented here. It uses an InMemoryDexClassLoader to load our
-     * framework into the target process.
+     * must be implemented here.
+     * It uses an InMemoryDexClassLoader to load our framework into the target process.
      */
     void LoadDex(JNIEnv *env, PreloadedDex &&dex) override;
 
@@ -89,16 +89,15 @@ protected:
      * @brief Provides the concrete implementation for finding the Java entry
      * class.
      *
-     * This method is also a pure virtual in the base class. It uses the
-     * obfuscation map to determine the real entry class name and finds it in
-     * the ClassLoader we created in LoadDex.
+     * This method is also a pure virtual in the base class.
+     * It uses the obfuscation map to determine the real entry class name and
+     * finds it in the ClassLoader we created in LoadDex.
      */
     void SetupEntryClass(JNIEnv *env) override;
 
 private:
     /**
-     * @brief Encapsulates the logic for telling Zygisk whether to unload our
-     * library.
+     * @brief Encapsulates the logic for telling Zygisk whether to unload our library.
      *
      * If we don't inject into a process, we allow Zygisk to dlclose our .so.
      * Otherwise, we MUST prevent this.
@@ -133,10 +132,9 @@ private:
 // =========================================================================================
 
 void VectorModule::LoadDex(JNIEnv *env, PreloadedDex &&dex) {
-    LOGD("Loading framework DEX into memory (size: {}).", dex.size());
+    LOGV("Loading framework DEX into memory (size: {}).", dex.size());
 
-    // Step 1: Get the system ClassLoader. This will be the parent of our new
-    // loader.
+    // Get the system ClassLoader. This will be the parent of our new loader.
     auto classloader_class = lsplant::JNI_FindClass(env, "java/lang/ClassLoader");
     if (!classloader_class) {
         LOGE("Failed to find java.lang.ClassLoader");
@@ -151,7 +149,7 @@ void VectorModule::LoadDex(JNIEnv *env, PreloadedDex &&dex) {
         return;
     }
 
-    // Step 2: Create a Java ByteBuffer wrapping our in-memory DEX data.
+    // Create a Java ByteBuffer wrapping our in-memory DEX data.
     auto byte_buffer_class = lsplant::JNI_FindClass(env, "java/nio/ByteBuffer");
     if (!byte_buffer_class) {
         LOGE("Failed to find java.nio.ByteBuffer");
@@ -164,7 +162,7 @@ void VectorModule::LoadDex(JNIEnv *env, PreloadedDex &&dex) {
         return;
     }
 
-    // Step 3: Create an InMemoryDexClassLoader instance.
+    // Create an InMemoryDexClassLoader instance.
     auto in_memory_cl_class = lsplant::JNI_FindClass(env, "dalvik/system/InMemoryDexClassLoader");
     if (!in_memory_cl_class) {
         LOGE("Failed to find InMemoryDexClassLoader.");
@@ -188,7 +186,7 @@ void VectorModule::LoadDex(JNIEnv *env, PreloadedDex &&dex) {
 
     // Store a global reference to our new ClassLoader.
     inject_class_loader_ = env->NewGlobalRef(new_cl.get());
-    LOGI("Framework ClassLoader created successfully.");
+    LOGV("Framework ClassLoader created successfully.");
 }
 
 void VectorModule::SetupEntryClass(JNIEnv *env) {
@@ -200,7 +198,6 @@ void VectorModule::SetupEntryClass(JNIEnv *env) {
     // Use the obfuscation map from the config to get the real class name.
     const auto &obfs_map = ConfigBridge::GetInstance()->obfuscation_map();
     std::string entry_class_name;
-    // Assume the native library provides a helper or direct map access.
     entry_class_name = obfs_map.at("org.matrix.vector.core.") + "Main";
 
     // We must find the class through our custom ClassLoader.
@@ -212,7 +209,7 @@ void VectorModule::SetupEntryClass(JNIEnv *env) {
 
     // Store a global reference to the entry class.
     entry_class_ = lsplant::JNI_NewGlobalRef(env, entry_class);
-    LOGI("Framework entry class '{}' located.", entry_class_name.c_str());
+    LOGV("Framework entry class '{}' located.", entry_class_name.c_str());
 }
 
 void VectorModule::onLoad(zygisk::Api *api, JNIEnv *env) {
@@ -231,8 +228,8 @@ void VectorModule::preAppSpecialize(zygisk::AppSpecializeArgs *args) {
     is_manager_app_ = false;
 
     // --- Manager App Special Handling ---
-    // We identify our manager app by a special UID and grant it internet
-    // permissions by adding it to the INET group.
+    // We identify our manager app by a special UID and
+    // grant it internet permissions by adding it to the INET group.
     if (args->uid == MANAGER_UID) {
         lsplant::JUTFString nice_name_str(env_, args->nice_name);
         if (nice_name_str.get() == "org.lsposed.manager"sv) {
@@ -272,8 +269,7 @@ void VectorModule::preAppSpecialize(zygisk::AppSpecializeArgs *args) {
         return;
     }
 
-    // Child Zygotes are specialized zygotes for apps like WebView and are not
-    // targets.
+    // Child Zygotes are specialized zygotes for apps like WebView and are not targets.
     if (args->is_child_zygote && *args->is_child_zygote) {
         LOGD("Skipping injection for '{}': is a child zygote.", nice_name_str.get());
         return;
@@ -284,14 +280,14 @@ void VectorModule::preAppSpecialize(zygisk::AppSpecializeArgs *args) {
     if ((app_id >= FIRST_ISOLATED_UID && app_id <= LAST_ISOLATED_UID) ||
         (app_id >= FIRST_APP_ZYGOTE_ISOLATED_UID && app_id <= LAST_APP_ZYGOTE_ISOLATED_UID) ||
         app_id == SHARED_RELRO_UID) {
-        LOGI("Skipping injection for '{}': is an isolated process (UID: %d).", nice_name_str.get(),
+        LOGV("Skipping injection for '{}': is an isolated process (UID: %d).", nice_name_str.get(),
              app_id);
         return;
     }
 
     // If we passed all checks, mark this process for injection.
     should_inject_ = true;
-    LOGI("Process '{}' (UID: {}) is marked for injection.", nice_name_str.get(), args->uid);
+    LOGV("Process '{}' (UID: {}) is marked for injection.", nice_name_str.get(), args->uid);
 }
 
 void VectorModule::postAppSpecialize(const zygisk::AppSpecializeArgs *args) {
@@ -311,7 +307,7 @@ void VectorModule::postAppSpecialize(const zygisk::AppSpecializeArgs *args) {
     auto &ipc_bridge = IPCBridge::GetInstance();
     auto binder = ipc_bridge.RequestAppBinder(env_, args->nice_name);
     if (!binder) {
-        LOGW("Failed to get IPC binder for '{}'. Skipping injection.", nice_name_str.get());
+        LOGD("No IPC binder obtained for '{}'. Skipping injection.", nice_name_str.get());
         SetAllowUnload(true);
         return;
     }
@@ -345,7 +341,7 @@ void VectorModule::postAppSpecialize(const zygisk::AppSpecializeArgs *args) {
                       "(ZLjava/lang/String;Ljava/lang/String;Landroid/os/IBinder;)V", JNI_FALSE,
                       args->nice_name, args->app_data_dir, binder.get(), is_manager_app_);
 
-    LOGI("Successfully injected Vector framework into '{}'.", nice_name_str.get());
+    LOGV("Injected Vector framework into '{}'.", nice_name_str.get());
     SetAllowUnload(false);  // We are injected, PREVENT module unloading.
 }
 
@@ -370,7 +366,7 @@ void VectorModule::postServerSpecialize(const zygisk::ServerSpecializeArgs *args
     // Some ZTE devices require argv[0] to be explicitly set to "system_server"
     // for certain services to function correctly after modification.
     if (__system_property_find("ro.vendor.product.ztename")) {
-        LOGI("Applying ZTE-specific workaround: setting argv[0] to system_server.");
+        LOGV("Applying ZTE-specific workaround: setting argv[0] to system_server.");
         auto process_class = lsplant::ScopedLocalRef(env_, env_->FindClass("android/os/Process"));
         if (process_class) {
             auto set_argv0_mid =
@@ -398,8 +394,8 @@ void VectorModule::postServerSpecialize(const zygisk::ServerSpecializeArgs *args
     auto manager_binder =
         ipc_bridge.RequestManagerBinderFromSystemServer(env_, system_binder.get());
 
-    // Use either the direct manager binder if available, otherwise proxy through
-    // the system binder.
+    // Use either the direct manager binder if available,
+    // otherwise proxy through the system binder.
     jobject effective_binder = manager_binder ? manager_binder.get() : system_binder.get();
 
     auto [dex_fd, dex_size] = ipc_bridge.FetchFrameworkDex(env_, effective_binder);
@@ -429,7 +425,7 @@ void VectorModule::postServerSpecialize(const zygisk::ServerSpecializeArgs *args
                       "(ZLjava/lang/String;Ljava/lang/String;Landroid/os/IBinder;)V", JNI_TRUE,
                       system_name.get(), nullptr, manager_binder.get(), is_manager_app_);
 
-    LOGI("Successfully injected Vector framework into system_server.");
+    LOGI("Injected Vector framework into system_server.");
     SetAllowUnload(false);  // We are injected, PREVENT module unloading.
 }
 

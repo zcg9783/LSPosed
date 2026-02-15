@@ -10,8 +10,7 @@ import org.matrix.vector.ParasiticManagerHooker
 import org.matrix.vector.ParasiticManagerSystemHooker
 
 /**
- * Main entry point for the Java-side loader. This class is invoked via JNI from the Vector Zygisk
- * module.
+ * Main entry point for the Java-side loader, invoked via JNI from the Vector Zygisk module.
  */
 object Main {
 
@@ -25,20 +24,20 @@ object Main {
      */
     @JvmStatic
     fun forkCommon(isSystem: Boolean, niceName: String, appDir: String?, binder: IBinder) {
-        // Step 1: Initialize system-specific resolution hooks if in system_server
+        // Initialize system-specific resolution hooks if in system_server
         if (isSystem) {
             ParasiticManagerSystemHooker.start()
         }
 
-        // Step 2: Initialize Xposed bridge components
+        // Initialize Xposed bridge components
         val appService = ILSPApplicationService.Stub.asInterface(binder)
         Startup.initXposed(isSystem, niceName, appDir, appService)
 
-        // Step 3: Configure logging levels from the service client
+        // Configure logging levels from the service client
         runCatching { Utils.Log.muted = serviceClient.isLogMuted }
             .onFailure { t -> Utils.logE("Failed to configure logs from service", t) }
 
-        // Step 4: Check if this process is the designated LSPosed Manager.
+        // Check if this process is the designated Vector Manager.
         // If so, we perform "parasitic" injection into a host (com.android.shell)
         // and terminate further standard Xposed loading for this specific process.
         if (niceName == "org.lsposed.manager" && ParasiticManagerHooker.start()) {
@@ -46,7 +45,7 @@ object Main {
             return
         }
 
-        // Step 5: Standard Xposed module loading for third-party apps
+        // Standard Xposed module loading for third-party apps
         Utils.logI("Loading Vector/Xposed for $niceName (UID: ${Process.myUid()})")
         Startup.bootstrapXposed()
     }

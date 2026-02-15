@@ -14,8 +14,8 @@ using namespace std::literals::string_view_literals;
 
 namespace vector::native::module {
 
-// A file-level static atomic variable to store the ID of the last caller
-// whose framework transaction failed. It's initialized to a value that won't match.
+// Store the ID of the last caller whose framework transaction failed.
+// It's initialized to a value that won't match.
 static std::atomic<uint64_t> g_last_failed_id = ~0;
 
 /**
@@ -49,7 +49,7 @@ public:
         if (!s_self_or_null_fn || !s_get_calling_pid_fn || !s_get_calling_uid_fn) {
             LOGW("Could not resolve all IPCThreadState symbols. Caller ID check will be disabled.");
         } else {
-            LOGI("IPCThreadState symbols resolved successfully.");
+            LOGV("IPCThreadState symbols resolved successfully.");
         }
     }
 
@@ -79,14 +79,12 @@ private:
 };
 
 // --- Binder IPC Protocol Constants ---
-// These are the "secret handshakes" used to communicate with the Vector manager
-// service.
+// These are the "secret handshakes" used to communicate with the Vector manager service.
 
 // The service descriptor that the remote Binder service expects.
 constexpr auto kBridgeServiceDescriptor = "LSPosed"sv;
-// The name of the system service we use as a rendezvous point to find our
-// manager service. Using "activity" is a common technique as it's always
-// available.
+// The name of the system service we use as a rendezvous point to find our manager service.
+// Using "activity" is a common technique as it's always available.
 constexpr auto kBridgeServiceName = "activity"sv;
 // A different rendezvous point used only by the system_server.
 constexpr auto kSystemServerBridgeServiceName = "serial"sv;
@@ -104,11 +102,9 @@ constexpr jint kActionGetBinder = 2;
 // =========================================================================================
 
 /**
- * @brief Constructs the ParcelWrapper, obtaining two new Parcel objects from
- * the pool.
+ * @brief Constructs the ParcelWrapper, obtaining two new Parcel objects from the pool.
  * @param env A valid JNI environment pointer.
- * @param bridge A pointer to the parent IPCBridge instance to access its cached
- * JNI IDs.
+ * @param bridge A pointer to the parent IPCBridge instance to access its cached JNI IDs.
  */
 IPCBridge::ParcelWrapper::ParcelWrapper(JNIEnv *env, IPCBridge *bridge)
     : data(lsplant::JNI_CallStaticObjectMethod(env, bridge->parcel_class_, bridge->obtain_method_)),
@@ -118,12 +114,11 @@ IPCBridge::ParcelWrapper::ParcelWrapper(JNIEnv *env, IPCBridge *bridge)
       bridge_(bridge) {}
 
 /**
- * @brief Destructs the ParcelWrapper, ensuring both Parcel objects are
- * recycled.
+ * @brief Destructs the ParcelWrapper, ensuring both Parcel objects are recycled.
  *
- * This is the core of the RAII pattern for Parcels. This destructor guarantees
- * that recycle() is called, preventing resource leaks even if errors occur
- * during the transaction.
+ * This is the core of the RAII pattern for Parcels.
+ * This destructor guarantees that recycle() is called, preventing resource leaks even if
+ * errors occur during the transaction.
  */
 IPCBridge::ParcelWrapper::~ParcelWrapper() {
     // Check if the parcel was successfully obtained before trying to recycle it.
@@ -150,8 +145,8 @@ void IPCBridge::Initialize(JNIEnv *env) {
     }
 
     // --- Cache JNI Classes and Method IDs ---
-    // Caching these at startup is more efficient and robust than looking them
-    // up on every IPC call. If any of these fail, the IPC bridge is unusable.
+    // Caching these at startup is more efficient and robust than looking them up on every IPC call.
+    // If any of these fail, the IPC bridge is unusable.
 
     // ServiceManager
     auto sm_class = lsplant::ScopedLocalRef(env, env->FindClass("android/os/ServiceManager"));
@@ -234,7 +229,7 @@ void IPCBridge::Initialize(JNIEnv *env) {
         return;
     }
 
-    LOGI("IPCBridge initialized successfully.");
+    LOGV("IPCBridge initialized successfully.");
     initialized_ = true;
 }
 
@@ -244,26 +239,26 @@ lsplant::ScopedLocalRef<jobject> IPCBridge::RequestAppBinder(JNIEnv *env, jstrin
         return {env, nullptr};
     }
 
-    // Step 1: Get the rendezvous service from the Android ServiceManager.
+    // Get the rendezvous service from the Android ServiceManager.
     auto service_name = lsplant::ScopedLocalRef(env, env->NewStringUTF(kBridgeServiceName.data()));
     auto bridge_service = lsplant::JNI_CallStaticObjectMethod(
         env, service_manager_class_, get_service_method_, service_name.get());
     if (!bridge_service) {
-        LOGD("Could not get rendezvous service '{}'. Manager not available?",
+        LOGE("Could not get rendezvous service '{}'. Manager not available?",
              kBridgeServiceName.data());
         return {env, nullptr};
     }
 
-    // Step 2: Prepare the IPC transaction.
+    // Prepare the IPC transaction.
     ParcelWrapper parcels(env, this);
     if (!parcels.data || !parcels.reply) {
         LOGE("Failed to obtain parcels for IPC.");
         return {env, nullptr};
     }
 
-    // This is a "heartbeat" binder. If our process dies, the manager service
-    // will be notified that this binder has died, allowing it to clean up
-    // resources.
+    // This is a "heartbeat" binder.
+    // If our process dies, the manager service will be notified that this binder has died,
+    // allowing it to clean up resources.
     auto heartbeat_binder =
         lsplant::ScopedLocalRef(env, env->NewObject(binder_class_, binder_ctor_));
     if (!heartbeat_binder) {
@@ -271,7 +266,7 @@ lsplant::ScopedLocalRef<jobject> IPCBridge::RequestAppBinder(JNIEnv *env, jstrin
         return {env, nullptr};
     }
 
-    // Step 3: Write the request data to the 'data' parcel.
+    // Write the request data to the 'data' parcel.
     auto descriptor =
         lsplant::ScopedLocalRef(env, env->NewStringUTF(kBridgeServiceDescriptor.data()));
     lsplant::JNI_CallVoidMethod(env, parcels.data.get(), write_interface_token_method_,
@@ -281,14 +276,14 @@ lsplant::ScopedLocalRef<jobject> IPCBridge::RequestAppBinder(JNIEnv *env, jstrin
     lsplant::JNI_CallVoidMethod(env, parcels.data.get(), write_strong_binder_method_,
                                 heartbeat_binder.get());
 
-    // Step 4: Perform the transaction.
+    // Perform the transaction.
     bool success = lsplant::JNI_CallBooleanMethod(env, bridge_service.get(), transact_method_,
                                                   kBridgeTransactionCode, parcels.data.get(),
                                                   parcels.reply.get(), 0);
 
     lsplant::ScopedLocalRef<jobject> result_binder = {env, nullptr};
     if (success) {
-        // Step 5: Read the reply. CRITICAL: must call readException first.
+        // Read the reply. CRITICAL: must call readException first.
         lsplant::JNI_CallVoidMethod(env, parcels.reply.get(), read_exception_method_);
         if (env->ExceptionCheck()) {
             LOGW("Remote exception received while requesting app binder.");
@@ -320,8 +315,8 @@ lsplant::ScopedLocalRef<jobject> IPCBridge::RequestSystemServerBinder(JNIEnv *en
         lsplant::ScopedLocalRef(env, env->NewStringUTF(kSystemServerBridgeServiceName.data()));
     lsplant::ScopedLocalRef<jobject> binder = {env, nullptr};
 
-    // The system_server might start its services slightly after Zygisk injects
-    // us. We retry a few times to give it a chance to register.
+    // The system_server might start its services slightly after Zygisk injects us.
+    // We retry a few times to give it a chance to register.
     for (int i = 0; i < 3; ++i) {
         binder = lsplant::JNI_CallStaticObjectMethod(env, service_manager_class_,
                                                      get_service_method_, service_name.get());
@@ -409,7 +404,7 @@ std::tuple<int, size_t> IPCBridge::FetchFrameworkDex(JNIEnv *env, jobject binder
     size_t size = static_cast<size_t>(
         lsplant::JNI_CallLongMethod(env, parcels.reply.get(), read_long_method_));
 
-    LOGI("Fetched framework DEX: fd={}, size={}", fd, size);
+    LOGV("Fetched framework DEX: fd={}, size={}", fd, size);
     return {fd, size};
 }
 
@@ -461,7 +456,7 @@ std::map<std::string, std::string> IPCBridge::FetchObfuscationMap(JNIEnv *env, j
         result_map[key_str.get()] = val_str.get();
     }
 
-    LOGI("Fetched obfuscation map with {} entries.", result_map.size());
+    LOGV("Fetched obfuscation map with {} entries.", result_map.size());
     return result_map;
 }
 
@@ -501,7 +496,8 @@ jboolean JNICALL IPCBridge::CallBooleanMethodV_Hook(JNIEnv *env, jobject obj, jm
     uint64_t current_caller_id = BinderCaller::GetId();
     if (current_caller_id != 0) {
         uint64_t last_failed = g_last_failed_id.load(std::memory_order_relaxed);
-        // If this caller is the one that just failed, skip interception and go straight to the original function.
+        // If this caller is the one that just failed,
+        // skip interception and go straight to the original function.
         if (current_caller_id == last_failed) {
             // We "consume" the failed state by resetting it, so the *next* call is not skipped.
             g_last_failed_id.store(~0, std::memory_order_relaxed);
@@ -528,7 +524,7 @@ void IPCBridge::HookBridge(JNIEnv *env) {
         return;
     }
 
-    // --- Step 1: Get framework-specific Java classes and methods ---
+    // Get framework-specific Java classes and methods ---
     const auto &obfs_map = ConfigBridge::GetInstance()->obfuscation_map();
     std::string bridge_service_class_name;
     bridge_service_class_name = obfs_map.at("org.matrix.vector.service.") + "BridgeService";
@@ -548,7 +544,7 @@ void IPCBridge::HookBridge(JNIEnv *env) {
         return;
     }
 
-    // --- Step 2: Prepare the JNI hook ---
+    // --- Prepare the JNI hook ---
     // Get the original method ID for android.os.Binder.execTransact
     exec_transact_backup_method_id_ =
         lsplant::JNI_GetMethodID(env, binder_class_, "execTransact", "(IJJI)Z");
