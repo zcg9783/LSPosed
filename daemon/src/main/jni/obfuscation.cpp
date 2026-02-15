@@ -44,9 +44,9 @@ std::map<const std::string, std::string> signatures = {
         { "Landroid/app/AndroidApp", ""},
         { "Landroid/content/res/XRes", ""},
         { "Landroid/content/res/XModule", ""},
-        { "Lorg/lsposed/lspd/core/", ""},
+        { "Lorg/matrix/vector/core/", ""},
         { "Lorg/matrix/vector/nativebridge/", ""},
-        { "Lorg/lsposed/lspd/service/", ""},
+        { "Lorg/matrix/vector/service/", ""},
 };
 
 jclass class_file_descriptor;

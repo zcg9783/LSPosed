@@ -79,7 +79,7 @@ import java.util.zip.ZipOutputStream;
 import hidden.HiddenApiBridge;
 
 public class ConfigFileManager {
-    static final Path basePath = Paths.get("/data/adb/lspd");
+    static final Path basePath = Paths.get("/data/adb/vector");
     static final Path modulePath = basePath.resolve("modules");
     static final Path daemonApkPath = Paths.get(System.getProperty("java.class.path", null));
     static final Path managerApkPath = daemonApkPath.getParent().resolve("manager.apk");
