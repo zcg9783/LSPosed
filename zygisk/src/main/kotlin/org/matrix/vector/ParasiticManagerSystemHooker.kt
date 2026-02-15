@@ -8,8 +8,8 @@ import android.content.pm.ResolveInfo
 import io.github.libxposed.api.XposedInterface
 import org.lsposed.lspd.hooker.HandleSystemServerProcessHooker
 import org.lsposed.lspd.impl.LSPosedHelper
-import org.matrix.vector.service.BridgeService
 import org.lsposed.lspd.util.Utils
+import org.matrix.vector.service.BridgeService
 
 /**
  * Handles System-Server side logic for the Parasitic Manager.

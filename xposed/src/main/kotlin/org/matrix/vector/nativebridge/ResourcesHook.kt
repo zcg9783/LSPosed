@@ -5,20 +5,22 @@ import dalvik.annotation.optimization.FastNative
 import xposed.dummy.XResourcesSuperClass
 
 object ResourcesHook {
-    @JvmStatic
-    external fun initXResourcesNative(): Boolean
+    @JvmStatic external fun initXResourcesNative(): Boolean
 
-    @JvmStatic
-    external fun makeInheritable(clazz: Class<*>): Boolean
+    @JvmStatic external fun makeInheritable(clazz: Class<*>): Boolean
 
     @JvmStatic
     external fun buildDummyClassLoader(
         parent: ClassLoader,
         resourceSuperClass: String,
-        typedArraySuperClass: String
+        typedArraySuperClass: String,
     ): ClassLoader
 
     @JvmStatic
     @FastNative
-    external fun rewriteXmlReferencesNative(parserPtr: Long, origRes: XResourcesSuperClass, repRes: Resources)
+    external fun rewriteXmlReferencesNative(
+        parserPtr: Long,
+        origRes: XResourcesSuperClass,
+        repRes: Resources,
+    )
 }

@@ -8,8 +8,8 @@ import android.os.Parcel
 import android.os.Process
 import hidden.HiddenApiBridge.Binder_allowBlocking
 import hidden.HiddenApiBridge.Context_getActivityToken
-import org.lsposed.lspd.util.Utils.Log
 import org.lsposed.lspd.service.ILSPosedService
+import org.lsposed.lspd.util.Utils.Log
 
 /**
  * Manages manual Binder transactions for the Vector framework.
@@ -94,7 +94,7 @@ object BridgeService {
     @JvmStatic
     fun onTransact(data: Parcel, reply: Parcel?, flags: Int): Boolean {
         return try {
-        data.enforceInterface(DESCRIPTOR)
+            data.enforceInterface(DESCRIPTOR)
             val actionIdx = data.readInt()
             val action = Action.values().getOrElse(actionIdx) { Action.UNKNOWN }
 

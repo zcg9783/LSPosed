@@ -23,9 +23,9 @@ import java.io.FileOutputStream
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 import org.lsposed.lspd.ILSPManagerService
+import org.lsposed.lspd.core.ApplicationServiceClient.serviceClient
 import org.lsposed.lspd.util.Hookers
 import org.lsposed.lspd.util.Utils
-import org.lsposed.lspd.core.ApplicationServiceClient.serviceClient
 
 /** The "Parasite" logic. Injects the LSPosed Manager APK into a host process (shell). */
 @SuppressLint("StaticFieldLeak")
@@ -47,7 +47,8 @@ object ParasiticManagerHooker {
                     val ctx: Context = ActivityThread.currentActivityThread().systemContext
                     var sourcePath = "/proc/self/fd/$managerFd"
 
-                    // SDK <= 28 (Android 9) cannot reliably parse APKs via FD paths in all contexts.
+                    // SDK <= 28 (Android 9) cannot reliably parse APKs via FD paths in all
+                    // contexts.
                     // We copy the APK to the host's cache as a workaround.
                     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.P) {
                         val dstPath = "${appInfo.dataDir}/cache/lsposed.apk"
@@ -173,7 +174,12 @@ object ParasiticManagerHooker {
                     }
                 }
             }
-        classLoaderUnhook = XposedHelpers.findAndHookMethod(LoadedApk::class.java, "getClassLoader", classLoaderHook)
+        classLoaderUnhook =
+            XposedHelpers.findAndHookMethod(
+                LoadedApk::class.java,
+                "getClassLoader",
+                classLoaderHook,
+            )
 
         // Hook 3: Activity Lifecycle & Intent Redirection
         val activityClientRecordClass =
@@ -188,7 +194,8 @@ object ParasiticManagerHooker {
                         if (arg is ActivityInfo) {
                             val pkgInfo =
                                 getManagerPkgInfo(arg.applicationInfo) ?: return@forEachIndexed
-                            pkgInfo.activities?.find { it.name == "org.lsposed.manager.ui.activity.MainActivity" }
+                            pkgInfo.activities
+                                ?.find { it.name == "org.lsposed.manager.ui.activity.MainActivity" }
                                 ?.let {
                                     it.applicationInfo = pkgInfo.applicationInfo
                                     param.args[i] = it
@@ -421,11 +428,11 @@ object ParasiticManagerHooker {
         val binderList = mutableListOf<IBinder>()
         return try {
             serviceClient.requestInjectedManagerBinder(binderList).use { pfd ->
-                    managerFd = pfd.detachFd()
-                    val managerService = ILSPManagerService.Stub.asInterface(binderList[0])
-                    hookForManager(managerService)
-                    Utils.logD("Vector manager injected successfully into process.")
-                    true
+                managerFd = pfd.detachFd()
+                val managerService = ILSPManagerService.Stub.asInterface(binderList[0])
+                hookForManager(managerService)
+                Utils.logD("Vector manager injected successfully into process.")
+                true
             }
         } catch (e: Throwable) {
             Utils.logE("Parasitic injection failed", e)

@@ -17,6 +17,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "LSPosed"
+
 include(
     ":app",
     ":core",
