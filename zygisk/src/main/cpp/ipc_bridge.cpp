@@ -82,7 +82,7 @@ private:
 // These are the "secret handshakes" used to communicate with the Vector manager service.
 
 // The service descriptor that the remote Binder service expects.
-constexpr auto kBridgeServiceDescriptor = "LSPosed"sv;
+constexpr auto kBridgeServiceDescriptor = "Vector"sv;
 // The name of the system service we use as a rendezvous point to find our manager service.
 // Using "activity" is a common technique as it's always available.
 constexpr auto kBridgeServiceName = "activity"sv;
