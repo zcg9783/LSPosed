@@ -77,7 +77,7 @@ extract "$ZIPFILE" 'sepolicy.rule'      "$MODPATH"
 extract "$ZIPFILE" 'framework/lspd.dex' "$MODPATH"
 extract "$ZIPFILE" 'daemon.apk'         "$MODPATH"
 extract "$ZIPFILE" 'daemon'             "$MODPATH"
-rm -f /data/adb/vector/manager.apk
+rm -f /data/adb/lspd/manager.apk
 extract "$ZIPFILE" 'manager.apk'        "$MODPATH"
 
   mkdir -p "$MODPATH/zygisk"

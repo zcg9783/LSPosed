@@ -1,1 +1,1 @@
-rm -rf /data/adb/vector
+rm -rf /data/adb/lspd
