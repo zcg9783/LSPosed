@@ -1,17 +1,20 @@
 #!/system/bin/sh
 
-dir=${0%/*}
-tmpLspdApk="/data/local/tmp/daemon.apk"
-debug=@DEBUG@
+dir="${0%/*}"
+tmpDaemonApk="/data/local/tmp/daemon.apk"
+debug="@DEBUG@"
 
-if [ -r $tmpLspdApk ]; then
-  java_options="-Djava.class.path=$tmpLspdApk"
+# Safely check for debug APK and set classpath
+if [ -r "$tmpDaemonApk" ]; then
+  java_options="-Djava.class.path=$tmpDaemonApk"
   debug="true"
 else
   java_options="-Djava.class.path=$dir/daemon.apk"
 fi
 
-if [ $debug = "true" ]; then
+# Apply debug options based on Android SDK version.
+# Reference: https://developer.android.com/ndk/guides/wrap-script#debugging_when_using_wrapsh
+if [ "$debug" = "true" ]; then
   os_version=$(getprop ro.build.version.sdk)
   if [ "$os_version" -eq "27" ]; then
     java_options="$java_options -Xrunjdwp:transport=dt_android_adb,suspend=n,server=y -Xcompiler-option --debuggable"
@@ -22,19 +25,22 @@ if [ $debug = "true" ]; then
   fi
 fi
 
+# Mount an empty temporary file system over /data/resource-cache to avoid possible overlay conflicts.
+# Note that this script runs inside an isolated mount namespace (via unshare).
 mount tmpfs -t tmpfs /data/resource-cache
 
+# Wait for Zygote socket using a polling loop
 if [ ! -S "/dev/socket/zygote" ]; then
-  timeout 0.5 inotifyd - /dev/socket:near | while read -r line; do
-    $debug && log -p v -t "LSPosed" "inotify: $line"
-    if [ -S "/dev/socket/zygote" ]; then
-      $debug && log -p v -t "LSPosed" "zygote started"
-      touch /dev/socket&
-      exit
-    fi
+  # Wait up to ~10 seconds to avoid an infinite hang if something breaks
+  wait_count=0
+  while [ ! -S "/dev/socket/zygote" ] &&[ "$wait_count" -lt 100 ]; do
+    sleep 0.1
+    wait_count=$((wait_count + 1))
   done
+  [ "$debug" = "true" ] && log -p v -t "Vector" "zygote started"
 fi
-$debug && log -p d -t "LSPosed" "start daemon $*"
 
-# shellcheck disable=SC2086
+[ "$debug" = "true" ] && log -p d -t "Vector" "Starting daemon $*"
+
+# Launch the daemon
 exec /system/bin/app_process $java_options /system/bin --nice-name=lspd org.lsposed.lspd.Main "$@" >/dev/null 2>&1
