@@ -1,6 +1,5 @@
 package org.matrix.vector.service
 
-import android.annotation.SuppressLint
 import android.os.Parcel
 import java.lang.reflect.Method
 

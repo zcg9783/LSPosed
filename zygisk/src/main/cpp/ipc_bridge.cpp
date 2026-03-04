@@ -81,8 +81,6 @@ private:
 // --- Binder IPC Protocol Constants ---
 // These are the "secret handshakes" used to communicate with the Vector manager service.
 
-// The service descriptor that the remote Binder service expects.
-constexpr auto kBridgeServiceDescriptor = "Vector"sv;
 // The name of the system service we use as a rendezvous point to find our manager service.
 // Using "activity" is a common technique as it's always available.
 constexpr auto kBridgeServiceName = "activity"sv;
@@ -90,9 +88,9 @@ constexpr auto kBridgeServiceName = "activity"sv;
 constexpr auto kSystemServerBridgeServiceName = "serial"sv;
 
 // Transaction codes for specific actions.
-constexpr jint kBridgeTransactionCode = 1598837584;
-constexpr jint kDexTransactionCode = 1310096052;
-constexpr jint kObfuscationMapTransactionCode = 724533732;
+constexpr jint kBridgeTransactionCode = ('_' << 24) | ('V' << 16) | ('E' << 8) | 'C';
+constexpr jint kDexTransactionCode = ('_' << 24) | ('D' << 16) | ('E' << 8) | 'X';
+constexpr jint kObfuscationMapTransactionCode = ('_' << 24) | ('O' << 16) | ('B' << 8) | 'F';
 
 // Action codes sent within a kBridgeTransactionCode transaction.
 constexpr jint kActionGetBinder = 2;
@@ -267,10 +265,6 @@ lsplant::ScopedLocalRef<jobject> IPCBridge::RequestAppBinder(JNIEnv *env, jstrin
     }
 
     // Write the request data to the 'data' parcel.
-    auto descriptor =
-        lsplant::ScopedLocalRef(env, env->NewStringUTF(kBridgeServiceDescriptor.data()));
-    lsplant::JNI_CallVoidMethod(env, parcels.data.get(), write_interface_token_method_,
-                                descriptor.get());
     lsplant::JNI_CallVoidMethod(env, parcels.data.get(), write_int_method_, kActionGetBinder);
     lsplant::JNI_CallVoidMethod(env, parcels.data.get(), write_string_method_, nice_name);
     lsplant::JNI_CallVoidMethod(env, parcels.data.get(), write_strong_binder_method_,

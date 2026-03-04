@@ -9,9 +9,7 @@ import org.lsposed.lspd.util.Utils
 import org.matrix.vector.ParasiticManagerHooker
 import org.matrix.vector.ParasiticManagerSystemHooker
 
-/**
- * Main entry point for the Java-side loader, invoked via JNI from the Vector Zygisk module.
- */
+/** Main entry point for the Java-side loader, invoked via JNI from the Vector Zygisk module. */
 object Main {
 
     /**

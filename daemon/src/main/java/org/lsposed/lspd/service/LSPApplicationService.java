@@ -40,8 +40,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class LSPApplicationService extends ILSPApplicationService.Stub {
-    final static int DEX_TRANSACTION_CODE = 1310096052;
-    final static int OBFUSCATION_MAP_TRANSACTION_CODE = 724533732;
+    final static int DEX_TRANSACTION_CODE = ('_' << 24) | ('D' << 16) | ('E' << 8) | 'X';
+    final static int OBFUSCATION_MAP_TRANSACTION_CODE = ('_' << 24) | ('O' << 16) | ('B' << 8) | 'F';
     // key: <uid, pid>
     private final static Map<Pair<Integer, Integer>, ProcessInfo> processes = new ConcurrentHashMap<>();
 

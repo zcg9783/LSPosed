@@ -19,9 +19,8 @@ import org.lsposed.lspd.util.Utils.Log
  */
 object BridgeService {
     private const val TRANSACTION_CODE =
-        ('_'.code shl 24) or ('L'.code shl 16) or ('S'.code shl 8) or 'P'.code
-    private const val DESCRIPTOR = "Vector"
-    private const val TAG = "Vector-Bridge"
+        ('_'.code shl 24) or ('V'.code shl 16) or ('E'.code shl 8) or 'C'.code
+    private const val TAG = "VectorBridge"
 
     /** Actions supported by the manual IPC bridge. */
     private enum class Action {
@@ -94,7 +93,6 @@ object BridgeService {
     @JvmStatic
     fun onTransact(data: Parcel, reply: Parcel?, flags: Int): Boolean {
         return try {
-            data.enforceInterface(DESCRIPTOR)
             val actionIdx = data.readInt()
             val action = Action.values().getOrElse(actionIdx) { Action.UNKNOWN }
 
