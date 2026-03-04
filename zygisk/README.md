@@ -67,7 +67,7 @@ The full lifecycle of a Vector-instrumented process follows this sequence:
 
 ### The IPC Protocol
 The communication between the native loader and the Kotlin framework relies on specific conventions:
-*   **Transaction Code**: The custom code `_LSP` (bitwise constructed) must remain synchronized between `ipc_bridge.cpp` (Native) and `BridgeService.kt` (Kotlin).
+*   **Transaction Code**: The custom code `_VEC` (bitwise constructed) must remain synchronized between `ipc_bridge.cpp` (Native) and `BridgeService.kt` (Kotlin).
 *   **The "Out-Parameter" List**: In `ParasiticManagerHooker.start()`, you will see an empty list `mutableListOf<IBinder>()`.
 It is used as an "out-parameter" for the Binder call, allowing the root daemon to push the Manager Service Binder back to the loader.
 
