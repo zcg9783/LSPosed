@@ -135,6 +135,7 @@ private:
     void *file_map_ = nullptr;
     size_t file_size_ = 0;
     ElfW(Addr) bias_ = 0;
+    bool bias_calculated_ = false;
 
     // Pointers into the mapped ELF file data.
     ElfW(Ehdr) *header_ = nullptr;

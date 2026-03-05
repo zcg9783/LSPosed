@@ -111,8 +111,9 @@ void ElfImage::parseHeaders(ElfW(Ehdr) * header) {
             // by waiting until after dynsym and strtab are found.
             if (dynsym_ == nullptr || strtab_start_ == nullptr) break;
 
-            if (bias_ == 0 && section_h->sh_flags & SHF_ALLOC && section_h->sh_addr > 0) {
+            if (!bias_calculated_ && section_h->sh_flags & SHF_ALLOC && section_h->sh_addr > 0) {
                 bias_ = section_h->sh_addr - section_h->sh_offset;
+                bias_calculated_ = true;
             }
             break;
         case SHT_HASH:
