@@ -293,7 +293,7 @@ lsplant::ScopedLocalRef<jobject> IPCBridge::RequestAppBinder(JNIEnv *env, jstrin
             }
         }
     } else {
-        LOGW("Transact call to request app binder failed.");
+        LOGD("Transact call to request app binder failed.");
     }
 
     return result_binder;
