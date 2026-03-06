@@ -1,7 +1,10 @@
 #include <dex_builder.h>
 
+#include <algorithm>
+#include <cstddef>
+#include <string>
+
 #include "common/config.h"
-#include "common/utils.h"
 #include "elf/elf_image.h"
 #include "elf/symbol_cache.h"
 #include "framework/android_types.h"
@@ -33,9 +36,7 @@ static TYPE_RESTART ResXMLParser_restart = nullptr;
 static TYPE_GET_ATTR_NAME_ID ResXMLParser_getAttributeNameID = nullptr;
 
 /**
- * @brief Constructs the JNI class name for the XResources class at runtime.
- *
- * @return The JNI-style class name (e.g., "org/some/obfuscated/XResources").
+ * @brief Constructs the class name for the XResources class at runtime.
  */
 static std::string GetXResourcesClassName() {
     // Use a static local variable to ensure this lookup and string manipulation
@@ -47,16 +48,12 @@ static std::string GetXResourcesClassName() {
         }
         // The key is the original, unobfuscated class name prefix.
         // The value is the new, obfuscated prefix.
-        // TODO: The key "android.content.res.XRes" is hardcoded and fragile.
         auto it = obfs_map.find("android.content.res.XRes");
         if (it == obfs_map.end()) {
             LOGE("Could not find obfuscated name for XResources.");
             return std::string();
         }
-        // The map gives something like "a.b.c." and we transform it into
-        // the full JNI class name "a/b/c/XResources".
-        std::string jni_name = JavaNameToSignature(it->second).substr(1);  // "a/b/c/"
-        jni_name += "ources";  // This seems to be a hardcoded way to append "XResources"
+        std::string jni_name = it->second + "ources";
         LOGD("Resolved XResources class name to: {}", jni_name.c_str());
         return jni_name;
     }();
@@ -123,10 +120,12 @@ VECTOR_DEF_NATIVE_METHOD(jboolean, ResourcesHook, initXResourcesNative) {
     }
 
     // Dynamically build the method signature using the (possibly obfuscated) class name.
+    std::string x_resources_jni_name = "L" + x_resources_class_name + ";";
+    std::replace(x_resources_jni_name.begin(), x_resources_jni_name.end(), '.', '/');
+
     methodXResourcesTranslateResId = env->GetStaticMethodID(
         classXResources, "translateResId",
-        fmt::format("(IL{};Landroid/content/res/Resources;)I", "L" + x_resources_class_name + ";")
-            .c_str());
+        fmt::format("(I{}Landroid/content/res/Resources;)I", x_resources_jni_name).c_str());
     if (!methodXResourcesTranslateResId) {
         LOGE("Failed to find method: XResources.translateResId");
         return JNI_FALSE;
@@ -134,7 +133,7 @@ VECTOR_DEF_NATIVE_METHOD(jboolean, ResourcesHook, initXResourcesNative) {
 
     methodXResourcesTranslateAttrId = env->GetStaticMethodID(
         classXResources, "translateAttrId",
-        fmt::format("(Ljava/lang/String;L{};)I", "L" + x_resources_class_name + ";").c_str());
+        fmt::format("(Ljava/lang/String;{})I", x_resources_jni_name).c_str());
     if (!methodXResourcesTranslateAttrId) {
         LOGE("Failed to find method: XResources.translateAttrId");
         return JNI_FALSE;

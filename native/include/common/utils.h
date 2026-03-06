@@ -14,20 +14,6 @@
 namespace vector::native {
 
 /**
- * @brief Converts a Java class name (dot-separated) to a JNI signature format.
- *
- * Example: "java.lang.String" -> "Ljava/lang/String;"
- * Note: This implementation only prepends 'L' and does not append ';'.
- *
- * @param className The dot-separated Java class name.
- * @return The class name in JNI format (e.g., "Ljava/lang/Object").
- */
-[[nodiscard]] inline std::string JavaNameToSignature(std::string className) {
-    std::replace(className.begin(), className.end(), '.', '/');
-    return "L" + className;
-}
-
-/**
  * @brief Returns the number of elements in a statically-allocated C-style array.
  *
  * This is a compile-time constant.
