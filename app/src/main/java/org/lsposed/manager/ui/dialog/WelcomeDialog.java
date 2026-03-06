@@ -34,7 +34,7 @@ import org.lsposed.manager.ui.fragment.BaseFragment;
 import org.lsposed.manager.util.ShortcutUtil;
 
 public class WelcomeDialog extends DialogFragment {
-    private static boolean shown = false;
+    private static boolean shown = true;
 
     private Dialog parasiticDialog(BlurBehindDialogBuilder builder) {
         var shortcutSupported = ShortcutUtil.isRequestPinShortcutSupported(requireContext());
