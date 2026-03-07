@@ -36,6 +36,7 @@ import androidx.navigation.NavOptions;
 import androidx.navigation.Navigation;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
+import android.content.res.Configuration;
 
 import com.google.android.material.navigation.NavigationBarView;
 
