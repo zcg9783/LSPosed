@@ -63,6 +63,14 @@ public class MainActivity extends BaseActivity implements RepoLoader.RepoListene
 
     private boolean restarting;
     private ActivityMainBinding binding;
+    
+    @Override
+    protected void attachBaseContext(Context base) {
+        Configuration config = base.getResources().getConfiguration();
+        config.densityDpi = 200;
+        Context newBase = base.createConfigurationContext(config);
+        super.attachBaseContext(newBase);
+    }
 
     @NonNull
     public static Intent newIntent(@NonNull Context context) {
